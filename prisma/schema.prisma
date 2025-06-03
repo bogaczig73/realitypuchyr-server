@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Property {
+  id                          Int                 @id @default(autoincrement())
+  name                        String
+  categoryId                  Int                 @map("category_id")
+  category                    Category            @relation(fields: [categoryId], references: [id])
+  status                      PropertyStatus      @default(ACTIVE)
+  ownershipType               OwnershipType
+  description                 String
+  city                        String
+  street                      String
+  country                     String
+  latitude                    Float?
+  longitude                   Float?
+  virtualTour                 String?
+  videoUrl                    String?
+  size                        String
+  beds                        String
+  baths                       String
+  layout                      String?
+  files                       Json?               @default("[]")
+  price                       Decimal             @db.Decimal(10, 2)
+  discountedPrice             Decimal?            @db.Decimal(10, 2)
+  buildingStoriesNumber       String?
+  buildingCondition           String?
+  apartmentCondition          String?
+  aboveGroundFloors           String?
+  reconstructionYearApartment String?
+  reconstructionYearBuilding  String?
+  totalAboveGroundFloors      String?
+  totalUndergroundFloors      String?
+  floorArea                   String?
+  builtUpArea                 String?
+  gardenHouseArea             String?
+  terraceArea                 String?
+  totalLandArea               String?
+  gardenArea                  String?
+  garageArea                  String?
+  balconyArea                 String?
+  pergolaArea                 String?
+  basementArea                String?
+  workshopArea                String?
+  totalObjectArea             String?
+  usableArea                  String?
+  landArea                    String?
+  objectType                  String?
+  objectLocationType          String?
+  houseEquipment              String?
+  accessRoad                  String?
+  objectCondition             String?
+  reservationPrice            String?
+  equipmentDescription        String?
+  additionalSources           String?
+  buildingPermit              String?
+  buildability                String?
+  utilitiesOnLand             String?
+  utilitiesOnAdjacentRoad     String?
+  payments                    String?
+  brokerId                    String?
+  secondaryAgent              String?
+  createdAt                   DateTime            @default(now()) @map("created_at")
+  updatedAt                   DateTime            @updatedAt @map("updated_at")
+  floorplans                  PropertyFloorplan[]
+  images                      PropertyImage[]
+  reviews                     Review[]
+
+  @@map("properties")
+}
+
+model PropertyImage {
+  id         Int      @id @default(autoincrement())
+  url        String
+  isMain     Boolean  @default(false)
+  order      Int      @default(0)
+  propertyId Int      @map("property_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("property_images")
+}
+
+model PropertyFloorplan {
+  id         Int      @id @default(autoincrement())
+  url        String
+  name       String
+  propertyId Int      @map("property_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("property_floorplans")
+}
+
+model Category {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  slug        String     @unique
+  image       String
+  properties  Property[]
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  @@map("categories")
+}
+
+enum PropertyStatus {
+  ACTIVE
+  SOLD
+  RENT
+}
+
+enum OwnershipType {
+  RENT
+  OWNERSHIP
+}
+
+model Review {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String
+  rating      Int      // Will store rating from 1-5
+  propertyId  Int?     @map("property_id")
+  property    Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("reviews")
+}
