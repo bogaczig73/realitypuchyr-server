@@ -545,4 +545,56 @@ router.delete('/:id', async (req, res, next) => {
     }
 });
 
+// Change property state
+router.patch('/:id/state', async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        // Validate status
+        if (!status || !['ACTIVE', 'SOLD', 'RENT'].includes(status.toUpperCase())) {
+            return res.status(400).json({
+                error: 'Invalid status',
+                details: 'Status must be one of: ACTIVE, SOLD, RENT'
+            });
+        }
+
+        // Update property status
+        const property = await prisma.property.update({
+            where: { id: parseInt(id) },
+            data: { status: status.toUpperCase() },
+            include: {
+                images: {
+                    orderBy: {
+                        order: 'asc'
+                    }
+                },
+                category: true
+            }
+        });
+
+        if (!property) {
+            return res.status(404).json({ error: 'Property not found' });
+        }
+
+        // Convert S3 URLs to CloudFront URLs
+        const propertyWithCloudFrontUrls = {
+            ...property,
+            images: property.images.map(image => ({
+                ...image,
+                url: convertToCloudFrontUrl(image.url)
+            })),
+            category: {
+                ...property.category,
+                image: convertToCloudFrontUrl(property.category.image)
+            }
+        };
+
+        res.json(propertyWithCloudFrontUrls);
+    } catch (err) {
+        console.error('Error updating property state:', err);
+        next(err);
+    }
+});
+
 module.exports = router; 
