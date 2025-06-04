@@ -1,8 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
-const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
+const { S3Client, ListObjectsV2Command, PutObjectCommand } = require('@aws-sdk/client-s3');
 const prisma = new PrismaClient();
+
+// Helper function to convert S3 key to CloudFront URL
+const getCloudFrontUrl = (key) => {
+  return `${process.env.CLOUDFRONT_URL}/${key}`;
+};
 
 /**
  * @route POST /api/external/properties
@@ -137,6 +142,36 @@ router.post('/properties', async (req, res) => {
       }
     });
 
+    // Create S3 folders for the new property
+    const s3Client = new S3Client({
+      region: process.env.AWS_REGION || 'eu-central-1',
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+      }
+    });
+
+    // Create empty objects to represent folders
+    const folderPromises = [
+      s3Client.send(new PutObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME || 'realitypuchyr-estate-photos',
+        Key: `images/${property.id}/`,
+        Body: ''
+      })),
+      s3Client.send(new PutObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME || 'realitypuchyr-estate-photos',
+        Key: `floorplans/${property.id}/`,
+        Body: ''
+      })),
+      s3Client.send(new PutObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME || 'realitypuchyr-estate-photos',
+        Key: `files/${property.id}/`,
+        Body: ''
+      }))
+    ];
+
+    await Promise.all(folderPromises);
+
     res.status(201).json({
       data: property.id
     });
@@ -214,7 +249,7 @@ router.put('/properties/:id', async (req, res) => {
       const imagePromises = imagesResult.Contents
         .filter(image => !image.Key.endsWith('/')) // Filter out directory entries
         .map((image, index) => {
-          const imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${image.Key}`;
+          const imageUrl = getCloudFrontUrl(image.Key);
           return prisma.propertyImage.create({
             data: {
               url: imageUrl,
@@ -239,7 +274,7 @@ router.put('/properties/:id', async (req, res) => {
       const floorplanPromises = floorplansResult.Contents
         .filter(floorplan => !floorplan.Key.endsWith('/')) // Filter out directory entries
         .map((floorplan) => {
-          const floorplanUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${floorplan.Key}`;
+          const floorplanUrl = getCloudFrontUrl(floorplan.Key);
           const name = floorplan.Key.split('/').pop().split('.')[0]; // Get filename without extension
           return prisma.propertyFloorplan.create({
             data: {
@@ -259,7 +294,7 @@ router.put('/properties/:id', async (req, res) => {
         .filter(file => !file.Key.endsWith('/')) // Filter out directory entries
         .map(file => ({
           name: file.Key.split('/').pop(),
-          url: `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${file.Key}`,
+          url: getCloudFrontUrl(file.Key),
           size: file.Size,
           type: file.Key.split('.').pop()
         }));
