@@ -85,7 +85,7 @@ router.get('/stats', async (req, res, next) => {
         });
 
         // Years of experience is hardcoded since it's a fixed value
-        const yearsOfExperience = 5;
+        const yearsOfExperience = new Date().getFullYear() - 2019;
 
         res.json({
             activeProperties,
@@ -94,6 +94,37 @@ router.get('/stats', async (req, res, next) => {
         });
     } catch (err) {
         console.error('Error fetching property statistics:', err);
+        next(err);
+    }
+});
+
+// Get property counts by category
+router.get('/category-stats', async (req, res, next) => {
+    try {
+        // First get all categories
+        const categories = await prisma.category.findMany({
+            include: {
+                _count: {
+                    select: {
+                        properties: {
+                            where: {
+                                status: 'ACTIVE'
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Transform the data into a more usable format
+        const formattedStats = categories.map(category => ({
+            categoryId: category.id,
+            categoryName: category.name,
+            count: category._count.properties
+        }));
+        res.json(formattedStats);
+    } catch (err) {
+        console.error('Error fetching property category statistics:', err);
         next(err);
     }
 });
@@ -218,8 +249,14 @@ router.get('/video-tours', async (req, res, next) => {
 router.get('/:id', async (req, res, next) => {
     try {
         const { id } = req.params;
+        const propertyId = parseInt(id, 10);
+        
+        if (isNaN(propertyId)) {
+            return res.status(400).json({ error: 'Invalid property ID' });
+        }
+
         const property = await prisma.property.findUnique({
-            where: { id: parseInt(id) },
+            where: { id: propertyId },
             include: {
                 images: {
                     orderBy: {
