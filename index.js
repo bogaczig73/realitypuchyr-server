@@ -7,6 +7,7 @@ const { Pool } = require('pg');
 const { uploadImages, uploadFiles, deleteFile, getSignedUrl, uploadFileToS3 } = require('./services/s3Service');
 const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const { initializeDatabase } = require('./services/dbInit');
+const { SUPPORTED_LANGUAGES } = require('./services/translationService');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // Import routes
@@ -55,9 +56,34 @@ async function startServer() {
         app.use(express.json());
         app.use(morgan('dev')); // Logging
 
+        // Language middleware
+        app.use((req, res, next) => {
+            // Extract language from URL path
+            const pathParts = req.path.split('/').filter(Boolean);
+            console.log('Path parts:', pathParts);
+            // Check if the first part is 'api'
+            if (pathParts[0] === 'api') {
+                // If second part is a supported language, use it
+                const language = pathParts[1];
+                if (SUPPORTED_LANGUAGES.includes(language)) {
+                    req.language = language;
+                    // Remove language from path for route matching
+                    req.url = '/api/' + pathParts.slice(2).join('/');
+                } else {
+                    // Default to Czech if no language specified
+                    req.language = 'cs';
+                }
+            } else {
+                // Default to Czech if no language specified
+                req.language = 'cs';
+            }
+            
+            next();
+        });
+
         // Request logging middleware
         app.use((req, res, next) => {
-            console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+            console.log(`${new Date().toISOString()} - ${req.method} ${req.url} (Language: ${req.language})`);
             next();
         });
 
@@ -73,50 +99,11 @@ async function startServer() {
             res.status(200).json({ status: 'healthy' });
         });
 
-        // Test AWS Configuration
-        app.get('/api/test-aws', async (req, res) => {
-            try {
-                console.log('AWS Configuration:');
-                // console.log('Access Key ID:', process.env.AWS_ACCESS_KEY_ID ? '✓ Set' : '✗ Missing');
-                // console.log('Secret Access Key:', process.env.AWS_SECRET_ACCESS_KEY ? '✓ Set' : '✗ Missing');
-                // console.log('Region:', process.env.AWS_REGION || 'eu-central-1');
-                // console.log('Bucket:', process.env.AWS_BUCKET_NAME || 'realitypuchyr-estate-photos');
-
-                // Test S3 bucket access
-                const s3Client = new S3Client({
-                    region: process.env.AWS_REGION || 'eu-central-1',
-                    credentials: {
-                        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-                    }
-                });
-
-                // Try to list objects in the bucket
-                const command = new ListObjectsV2Command({
-                    Bucket: process.env.AWS_BUCKET_NAME || 'realitypuchyr-estate-photos',
-                    MaxKeys: 1
-                });
-                const data = await s3Client.send(command);
-
-                res.json({
-                    status: 'success',
-                    message: 'AWS S3 configuration is working',
-                    bucketContents: data.Contents || []
-                });
-            } catch (error) {
-                console.error('AWS Test Error:', error);
-                res.status(500).json({
-                    status: 'error',
-                    message: 'AWS S3 configuration test failed',
-                    error: error.message
-                });
-            }
-        });
 
         // Create new property
         app.post('/api/properties', uploadImages.array('images', 10), uploadFiles.array('files', 10), async (req, res) => {
             try {
-                console.log('Received request body:', req.body);
+                // console.log('Received request body:', req.body);
                 console.log('Received images:', req.files);
                 console.log('Received files:', req.files);
                 

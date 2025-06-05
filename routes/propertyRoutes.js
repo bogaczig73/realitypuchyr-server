@@ -3,6 +3,7 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const { uploadPropertyFiles, uploadFileToS3, deleteFile } = require('../services/s3Service');
 const { validateProperty } = require('../middleware/validation');
+const { translateProperty, SUPPORTED_LANGUAGES } = require('../services/translationService');
 
 const prisma = new PrismaClient();
 
@@ -15,63 +16,28 @@ const convertToCloudFrontUrl = (url) => {
     );
 };
 
-// Test S3 upload endpoint
-router.post('/test-upload', uploadPropertyFiles, async (req, res) => {
-    try {
-        if (!req.files || (!req.files.images && !req.files.files)) {
-            return res.status(400).json({ error: 'No files uploaded' });
-        }
+// Helper function to get preferred language from Accept-Language header
+const getPreferredLanguage = (acceptLanguage) => {
+  if (!acceptLanguage) return 'cs';
+  
+  // Parse Accept-Language header (e.g., "en-US,en;q=0.9,cs;q=0.8")
+  const languages = acceptLanguage.split(',')
+    .map(lang => {
+      const [language, q = 'q=1.0'] = lang.trim().split(';');
+      return {
+        language: language.split('-')[0], // Get primary language code
+        q: parseFloat(q.split('=')[1])
+      };
+    })
+    .sort((a, b) => b.q - a.q);
 
-        console.log('Test upload - Files received:', {
-            images: req.files.images?.map(file => ({
-                originalname: file.originalname,
-                mimetype: file.mimetype,
-                size: file.size
-            })),
-            files: req.files.files?.map(file => ({
-                originalname: file.originalname,
-                mimetype: file.mimetype,
-                size: file.size
-            }))
-        });
+  // Find first supported language
+  const preferredLanguage = languages.find(lang => 
+    SUPPORTED_LANGUAGES.includes(lang.language)
+  );
 
-        // Upload all files to S3
-        const uploadPromises = [];
-        
-        if (req.files.images) {
-            uploadPromises.push(...req.files.images.map(async (file) => {
-                const imageUrl = await uploadFileToS3(file, 'test', 'images');
-                return {
-                    type: 'image',
-                    originalname: file.originalname,
-                    url: imageUrl
-                };
-            }));
-        }
-
-        if (req.files.files) {
-            uploadPromises.push(...req.files.files.map(async (file) => {
-                const fileUrl = await uploadFileToS3(file, 'test', 'files');
-                return {
-                    type: 'file',
-                    originalname: file.originalname,
-                    url: fileUrl,
-                    mimetype: file.mimetype,
-                    size: file.size
-                };
-            }));
-        }
-
-        const results = await Promise.all(uploadPromises);
-        res.json(results);
-    } catch (error) {
-        console.error('Test upload error:', error);
-        res.status(500).json({
-            error: 'Upload failed',
-            details: error.message
-        });
-    }
-});
+  return preferredLanguage?.language || 'cs';
+};
 
 // Get property statistics
 router.get('/stats', async (req, res, next) => {
@@ -138,6 +104,7 @@ router.get('/', async (req, res, next) => {
         const status = req.query.status;
         const categoryId = req.query.categoryId ? parseInt(req.query.categoryId) : undefined;
         const skip = (page - 1) * limit;
+        const preferredLanguage = req.language || 'cs';
 
         // Build where clause for search and filters
         const where = {
@@ -171,25 +138,64 @@ router.get('/', async (req, res, next) => {
                         order: 'asc'
                     }
                 },
-                category: true
+                category: true,
+                translations: {
+                    where: {
+                        language: preferredLanguage
+                    }
+                }
             }
         });
 
-        // Convert S3 URLs to CloudFront URLs
-        const propertiesWithCloudFrontUrls = properties.map(property => ({
-            ...property,
-            images: property.images.map(image => ({
-                ...image,
-                url: convertToCloudFrontUrl(image.url)
-            })),
-            category: {
-                ...property.category,
-                image: convertToCloudFrontUrl(property.category.image)
+        // Process properties to use translations if available
+        const processedProperties = properties.map(property => {
+            let processedProperty = { ...property };
+            
+            // If translation exists and it's not the original language, use it
+            if (property.translations && property.translations.length > 0 && preferredLanguage !== property.language) {
+                const translation = property.translations[0];
+                processedProperty = {
+                    ...property,
+                    name: translation.name,
+                    description: translation.description,
+                    country: translation.country,
+                    size: translation.size,
+                    beds: translation.beds,
+                    baths: translation.baths,
+                    buildingCondition: translation.buildingCondition,
+                    apartmentCondition: translation.apartmentCondition,
+                    objectType: translation.objectType,
+                    objectLocationType: translation.objectLocationType,
+                    houseEquipment: translation.houseEquipment,
+                    accessRoad: translation.accessRoad,
+                    objectCondition: translation.objectCondition,
+                    equipmentDescription: translation.equipmentDescription,
+                    additionalSources: translation.additionalSources,
+                    buildingPermit: translation.buildingPermit,
+                    buildability: translation.buildability,
+                    utilitiesOnLand: translation.utilitiesOnLand,
+                    utilitiesOnAdjacentRoad: translation.utilitiesOnAdjacentRoad,
+                    payments: translation.payments,
+                    translations: undefined // Remove translations array from response
+                };
             }
-        }));
+
+            // Convert S3 URLs to CloudFront URLs
+            return {
+                ...processedProperty,
+                images: processedProperty.images.map(image => ({
+                    ...image,
+                    url: convertToCloudFrontUrl(image.url)
+                })),
+                category: {
+                    ...processedProperty.category,
+                    image: convertToCloudFrontUrl(processedProperty.category.image)
+                }
+            };
+        });
 
         res.json({
-            properties: propertiesWithCloudFrontUrls,
+            properties: processedProperties,
             pagination: {
                 total,
                 pages: Math.ceil(total / limit),
@@ -245,51 +251,98 @@ router.get('/video-tours', async (req, res, next) => {
     }
 });
 
-// Get single property
-router.get('/:id', async (req, res, next) => {
-    try {
-        const { id } = req.params;
-        const propertyId = parseInt(id, 10);
-        
-        if (isNaN(propertyId)) {
-            return res.status(400).json({ error: 'Invalid property ID' });
-        }
+// Get property with translation
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const preferredLanguage = req.language || 'cs';
+    console.log('Using language:', preferredLanguage);
 
-        const property = await prisma.property.findUnique({
-            where: { id: propertyId },
-            include: {
-                images: {
-                    orderBy: {
-                        order: 'asc'
-                    }
-                },
-                floorplans: true,
-                category: true
-            }
-        });
-        
-        if (!property) {
-            return res.status(404).json({ error: 'Property not found' });
-        }
+    const property = await prisma.property.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        translations: {
+          where: {
+            language: preferredLanguage
+          }
+        },
+        images: {
+          orderBy: {
+            order: 'asc'
+          }
+        },
+        floorplans: true,
+        category: true
+      }
+    });
 
-        // Convert S3 URLs to CloudFront URLs
-        const propertyWithCloudFrontUrls = {
-            ...property,
-            images: property.images.map(image => ({
-                ...image,
-                url: convertToCloudFrontUrl(image.url)
-            })),
-            category: {
-                ...property.category,
-                image: convertToCloudFrontUrl(property.category.image)
-            }
-        };
-        
-        res.json(propertyWithCloudFrontUrls);
-    } catch (err) {
-        console.error('Error fetching property:', err);
-        next(err);
+    if (!property) {
+      return res.status(404).json({ error: 'Property not found' });
     }
+
+    // If translation exists and it's not the original language, use it
+    if (property.translations && property.translations.length > 0 && preferredLanguage !== property.language) {
+      const translation = property.translations[0];
+      const translatedProperty = {
+        ...property,
+        name: translation.name,
+        description: translation.description,
+        country: translation.country,
+        size: translation.size,
+        beds: translation.beds,
+        baths: translation.baths,
+        buildingCondition: translation.buildingCondition,
+        apartmentCondition: translation.apartmentCondition,
+        objectType: translation.objectType,
+        objectLocationType: translation.objectLocationType,
+        houseEquipment: translation.houseEquipment,
+        accessRoad: translation.accessRoad,
+        objectCondition: translation.objectCondition,
+        equipmentDescription: translation.equipmentDescription,
+        additionalSources: translation.additionalSources,
+        buildingPermit: translation.buildingPermit,
+        buildability: translation.buildability,
+        utilitiesOnLand: translation.utilitiesOnLand,
+        utilitiesOnAdjacentRoad: translation.utilitiesOnAdjacentRoad,
+        payments: translation.payments,
+        translations: undefined // Remove translations array from response
+      };
+
+      // Convert S3 URLs to CloudFront URLs
+      const propertyWithCloudFrontUrls = {
+        ...translatedProperty,
+        images: translatedProperty.images.map(image => ({
+          ...image,
+          url: convertToCloudFrontUrl(image.url)
+        })),
+        category: {
+          ...translatedProperty.category,
+          image: convertToCloudFrontUrl(translatedProperty.category.image)
+        }
+      };
+
+      return res.json(propertyWithCloudFrontUrls);
+    }
+
+    // If no translation exists or if preferred language is the original language,
+    // return original property with CloudFront URLs
+    const propertyWithCloudFrontUrls = {
+      ...property,
+      images: property.images.map(image => ({
+        ...image,
+        url: convertToCloudFrontUrl(image.url)
+      })),
+      category: {
+        ...property.category,
+        image: convertToCloudFrontUrl(property.category.image)
+      }
+    };
+
+    res.json(propertyWithCloudFrontUrls);
+  } catch (error) {
+    console.error('Error fetching property:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Create new property
@@ -300,7 +353,7 @@ router.post('/', uploadPropertyFiles, validateProperty, async (req, res, next) =
 
         const {
             name, categoryId, status, ownershipType, description,
-            city, street, country, latitude, longitude,
+            city, street, country, language = 'cs', latitude, longitude,
             virtualTour, videoUrl, size, beds, baths,
             price, discountedPrice, buildingStoriesNumber,
             buildingCondition, apartmentCondition, aboveGroundFloors,
@@ -327,6 +380,11 @@ router.post('/', uploadPropertyFiles, validateProperty, async (req, res, next) =
                     !categoryId && 'Category is required'
                 ].filter(Boolean)
             });
+        }
+
+        // Validate language
+        if (!SUPPORTED_LANGUAGES.includes(language)) {
+            return res.status(400).json({ error: 'Unsupported language' });
         }
 
         // Create property with Prisma
@@ -391,6 +449,7 @@ router.post('/', uploadPropertyFiles, validateProperty, async (req, res, next) =
                 payments: payments || null,
                 brokerId: brokerId ? parseInt(brokerId) : null,
                 secondaryAgent: secondaryAgent || null,
+                language,
             }
         });
 
@@ -595,6 +654,55 @@ router.patch('/:id/state', async (req, res, next) => {
         console.error('Error updating property state:', err);
         next(err);
     }
+});
+
+// Translate property to target language
+router.post('/:id/translate', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { targetLanguage, sourceLanguage } = req.body;
+
+    if (!targetLanguage || !SUPPORTED_LANGUAGES.includes(targetLanguage)) {
+      return res.status(400).json({ error: 'Invalid or unsupported target language' });
+    }
+
+    // Get the property
+    const property = await prisma.property.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        translations: true
+      }
+    });
+
+    if (!property) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+
+    // Check if translation already exists
+    console.log('Translating property:', property);
+    console.log('Translating property:', targetLanguage);
+    const existingTranslation = property.translations.find(t => t.language === targetLanguage);
+    if (existingTranslation) {
+      return res.status(400).json({ error: 'Translation already exists for this language' });
+    }
+
+    // Translate the property
+    const translations = await translateProperty(property, targetLanguage, sourceLanguage);
+
+    // Create translation record
+    const translation = await prisma.propertyTranslation.create({
+      data: {
+        propertyId: parseInt(id),
+        language: targetLanguage,
+        ...translations
+      }
+    });
+
+    res.json(translation);
+  } catch (error) {
+    console.error('Translation error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 module.exports = router; 

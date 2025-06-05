@@ -9,4 +9,4 @@ updateState: async (id: number, status: 'ACTIVE' | 'SOLD'): Promise<Property> =>
         }
         throw error;
     }
-}, 
+},

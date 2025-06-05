@@ -18,6 +18,7 @@ model Property {
   city                        String
   street                      String
   country                     String
+  language                    String              @default("cs")
   latitude                    Float?
   longitude                   Float?
   virtualTour                 String?
