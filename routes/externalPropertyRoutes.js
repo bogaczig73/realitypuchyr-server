@@ -76,8 +76,25 @@ router.post('/properties', async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!name || !categoryId || !ownershipType || !description || !city || !street || !country || !size || !beds || !baths || !price) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    const requiredFields = {
+      name: 'Property name',
+      categoryId: 'Category',
+      ownershipType: 'Ownership type',
+      size: 'Size',
+
+
+      price: 'Price'
+    };
+
+    const missingFields = Object.entries(requiredFields)
+      .filter(([field]) => !req.body[field])
+      .map(([_, label]) => label);
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({ 
+        error: 'Missing required fields',
+        missingFields: missingFields
+      });
     }
 
     // Create the property
@@ -87,10 +104,10 @@ router.post('/properties', async (req, res) => {
         categoryId: parseInt(categoryId),
         status,
         ownershipType,
-        description,
-        city,
-        street,
-        country,
+        description: description || null,
+        city: city || null,
+        street: street || null,
+        country: country || null,
         latitude: latitude ? parseFloat(latitude) : null,
         longitude: longitude ? parseFloat(longitude) : null,
         virtualTour,

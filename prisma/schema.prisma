@@ -14,18 +14,18 @@ model Property {
   category                    Category            @relation(fields: [categoryId], references: [id])
   status                      PropertyStatus      @default(ACTIVE)
   ownershipType               OwnershipType
-  description                 String
-  city                        String
-  street                      String
-  country                     String
+  description                 String?
+  city                        String?
+  street                      String?
+  country                     String?
   language                    String              @default("cs")
   latitude                    Float?
   longitude                   Float?
   virtualTour                 String?
   videoUrl                    String?
-  size                        Int
-  beds                        Int
-  baths                       Int
+  size                        Decimal             @db.Decimal(10, 2)
+  beds                        Int?
+  baths                       Int?
   layout                      String?
   files                       Json?               @default("[]")
   price                       Decimal             @db.Decimal(10, 2)
@@ -143,7 +143,7 @@ model PropertyTranslation {
   name                 String
   description          String
   country              String
-  size                 String
+  size                 Decimal  @db.Decimal(10, 2)
   beds                 String
   baths                String
   buildingCondition    String?
