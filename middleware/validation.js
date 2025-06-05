@@ -1,25 +1,24 @@
 const validateProperty = (req, res, next) => {
-    const { name, price } = req.body;
-    const errors = [];
+    // If the request body has a data field containing stringified JSON, parse it
+    if (req.body.data) {
+        try {
+            req.body = JSON.parse(req.body.data);
+        } catch (error) {
+            return res.status(400).json({
+                error: 'Invalid request body format',
+                details: 'The data field must contain valid JSON'
+            });
+        }
+    }
 
     // Validate required fields
-    if (!name) {
-        errors.push('Name is required');
-    }
+    const requiredFields = ['name', 'price', 'categoryId'];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
 
-    if (!price) {
-        errors.push('Price is required');
-    } else if (isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
-        errors.push('Price must be a positive number');
-    }
-
-    // If there are any errors, return them
-    if (errors.length > 0) {
-        console.log('Validation errors:', errors);
-        console.log('Request body:', req.body);
-        return res.status(400).json({ 
-            error: 'Validation failed',
-            details: errors
+    if (missingFields.length > 0) {
+        return res.status(400).json({
+            error: 'Missing required fields',
+            details: missingFields.map(field => `${field} is required`)
         });
     }
 

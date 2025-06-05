@@ -22,35 +22,35 @@ model Property {
   longitude                   Float?
   virtualTour                 String?
   videoUrl                    String?
-  size                        String
-  beds                        String
-  baths                       String
+  size                        Int
+  beds                        Int
+  baths                       Int
   layout                      String?
   files                       Json?               @default("[]")
   price                       Decimal             @db.Decimal(10, 2)
   discountedPrice             Decimal?            @db.Decimal(10, 2)
-  buildingStoriesNumber       String?
+  buildingStoriesNumber       Int?
   buildingCondition           String?
   apartmentCondition          String?
-  aboveGroundFloors           String?
-  reconstructionYearApartment String?
-  reconstructionYearBuilding  String?
-  totalAboveGroundFloors      String?
-  totalUndergroundFloors      String?
-  floorArea                   String?
-  builtUpArea                 String?
-  gardenHouseArea             String?
-  terraceArea                 String?
-  totalLandArea               String?
-  gardenArea                  String?
-  garageArea                  String?
-  balconyArea                 String?
-  pergolaArea                 String?
-  basementArea                String?
-  workshopArea                String?
-  totalObjectArea             String?
-  usableArea                  String?
-  landArea                    String?
+  aboveGroundFloors           Int?
+  reconstructionYearApartment Int?
+  reconstructionYearBuilding  Int?
+  totalAboveGroundFloors      Int?
+  totalUndergroundFloors      Int?
+  floorArea                   Decimal?            @db.Decimal(10, 2)
+  builtUpArea                 Decimal?            @db.Decimal(10, 2)
+  gardenHouseArea             Decimal?            @db.Decimal(10, 2)
+  terraceArea                 Decimal?            @db.Decimal(10, 2)
+  totalLandArea               Decimal?            @db.Decimal(10, 2)
+  gardenArea                  Decimal?            @db.Decimal(10, 2)
+  garageArea                  Decimal?            @db.Decimal(10, 2)
+  balconyArea                 Decimal?            @db.Decimal(10, 2)
+  pergolaArea                 Decimal?            @db.Decimal(10, 2)
+  basementArea                Decimal?            @db.Decimal(10, 2)
+  workshopArea                Decimal?            @db.Decimal(10, 2)
+  totalObjectArea             Decimal?            @db.Decimal(10, 2)
+  usableArea                  Decimal?            @db.Decimal(10, 2)
+  landArea                    Decimal?            @db.Decimal(10, 2)
   objectType                  String?
   objectLocationType          String?
   houseEquipment              String?
@@ -71,6 +71,7 @@ model Property {
   floorplans                  PropertyFloorplan[]
   images                      PropertyImage[]
   reviews                     Review[]
+  translations                PropertyTranslation[]
 
   @@map("properties")
 }
@@ -132,4 +133,36 @@ model Review {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("reviews")
+}
+
+model PropertyTranslation {
+  id                    Int      @id @default(autoincrement())
+  propertyId           Int      @map("property_id")
+  language             String   // e.g., "en", "sk", "cs"
+  name                 String
+  description          String
+  country              String
+  size                 String
+  beds                 String
+  baths                String
+  buildingCondition    String?
+  apartmentCondition   String?
+  objectType           String?
+  objectLocationType   String?
+  houseEquipment       String?
+  accessRoad           String?
+  objectCondition      String?
+  equipmentDescription String?
+  additionalSources    String?
+  buildingPermit       String?
+  buildability         String?
+  utilitiesOnLand      String?
+  utilitiesOnAdjacentRoad String?
+  payments             String?
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  property             Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, language])
+  @@map("property_translations")
 }
