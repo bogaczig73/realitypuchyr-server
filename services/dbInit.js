@@ -8,12 +8,29 @@ async function initializeDatabase() {
     try {
         console.log('Starting database initialization...');
         
-        // Run Prisma migrations
-        console.log('Running Prisma migrations...');
-        execSync('npx prisma migrate deploy', {
-            stdio: 'inherit',
-            cwd: path.join(__dirname, '..')
-        });
+        // Reset database if RESET_DB is true
+        if (process.env.RESET_DB === 'true') {
+            console.log('Resetting database...');
+            execSync('npx prisma migrate reset --force', {
+                stdio: 'inherit',
+                cwd: path.join(__dirname, '..')
+            });
+        } else {
+            // Run Prisma migrations
+            console.log('Running Prisma migrations...');
+            try {
+                execSync('npx prisma migrate deploy', {
+                    stdio: 'inherit',
+                    cwd: path.join(__dirname, '..')
+                });
+            } catch (migrationError) {
+                console.error('Migration failed, attempting to reset database...');
+                execSync('npx prisma migrate reset --force', {
+                    stdio: 'inherit',
+                    cwd: path.join(__dirname, '..')
+                });
+            }
+        }
         
         // Verify database connection
         await prisma.$connect();
