@@ -1,42 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const properties = [
-  {
-    name: "Moderní byt v centru",
-    categoryId: 1,
-    status: "ACTIVE",
-    ownershipType: "OWNERSHIP",
-    description: "Krásný moderní byt v centru města",
-    city: "Praha",
-    street: "Václavské náměstí 1",
-    country: "Česká republika",
-    size: 85,
-    beds: 2,
-    baths: 1,
-    price: 4500000,
-    buildingStoriesNumber: 8,
-    aboveGroundFloors: 5,
-    totalAboveGroundFloors: 8,
-    totalUndergroundFloors: 2,
-    floorArea: 85.5,
-    builtUpArea: 75.2,
-    balconyArea: 12.3,
-    objectType: "Byt",
-    objectLocationType: "Centrum města",
-    houseEquipment: "Kompletně vybavený",
-    accessRoad: "Asfaltová",
-    objectCondition: "Po rekonstrukci",
-    equipmentDescription: "Vybavení kuchyně, vestavěné skříně",
-    additionalSources: "Vlastní garáž",
-    buildingPermit: "Ano",
-    buildability: "100%",
-    utilitiesOnLand: "Všechny",
-    utilitiesOnAdjacentRoad: "Všechny",
-    payments: "Hotovost, hypotéka"
-  }
-];
-
 const reviews = [
   {
     name: "Lo Scalzo Monika",

@@ -36,14 +36,14 @@ async function initializeDatabase() {
         await prisma.$connect();
         console.log('Database connection successful');
         
-        // Optional: Run seed if needed
-        if (process.env.RUN_SEED === 'true') {
-            console.log('Running database seed...');
-            execSync('npx prisma db seed', {
-                stdio: 'inherit',
-                cwd: path.join(__dirname, '..')
-            });
-        }
+        // // Optional: Run seed if needed
+        // if (process.env.RUN_SEED === 'true') {
+        //     console.log('Running database seed...');
+        //     execSync('npx prisma db seed', {
+        //         stdio: 'inherit',
+        //         cwd: path.join(__dirname, '..')
+        //     });
+        // }
         
         console.log('Database initialization completed successfully');
     } catch (error) {
