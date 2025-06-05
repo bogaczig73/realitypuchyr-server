@@ -141,11 +141,11 @@ model PropertyTranslation {
   propertyId           Int      @map("property_id")
   language             String   // e.g., "en", "sk", "cs"
   name                 String
-  description          String
-  country              String
-  size                 Decimal  @db.Decimal(10, 2)
-  beds                 String
-  baths                String
+  description          String?
+  country              String?
+  size                 Decimal?  @db.Decimal(10, 2)
+  beds                 String?
+  baths                String?
   buildingCondition    String?
   apartmentCondition   String?
   objectType           String?
