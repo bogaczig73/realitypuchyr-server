@@ -43,12 +43,44 @@ const preprocessContent = (content) => {
 // Get all blogs
 router.get('/', async (req, res) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const truncate = parseInt(req.query.truncate) || 0; // 0 means no truncation
+        const skip = (page - 1) * limit;
+
+        // Get blogs with pagination
         const blogs = await prisma.blog.findMany({
             orderBy: {
                 date: 'desc'
+            },
+            skip,
+            take: limit,
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                content: true,
+                tags: true,
+                date: true,
+                pictures: true,
+                metaTitle: true,
+                metaDescription: true,
+                keywords: true,
+                language: true,
+                createdAt: true,
+                updatedAt: true
             }
         });
-        res.json(blogs);
+
+        // Truncate content if truncate parameter is provided
+        const blogsWithTruncatedContent = blogs.map(blog => ({
+            ...blog,
+            content: truncate > 0 && blog.content.length > truncate 
+                ? blog.content.substring(0, truncate) + '...' 
+                : blog.content
+        }));
+
+        res.json(blogsWithTruncatedContent);
     } catch (error) {
         console.error('Error fetching blogs:', error);
         res.status(500).json({ error: 'Failed to fetch blogs', details: error.message });
