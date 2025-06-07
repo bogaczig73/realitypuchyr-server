@@ -178,6 +178,37 @@ const reviews = [
   }
 ];
 
+const blogs = [
+  {
+    name: "Real Estate Market Trends in 2024",
+    slug: "real-estate-market-trends-2024",
+    content: "The real estate market in 2024 continues to evolve with several key trends emerging. Sustainable living spaces are becoming increasingly important to buyers, with energy-efficient homes commanding premium prices. Smart home technology integration is no longer a luxury but an expectation, particularly among younger buyers.\n\nUrban areas are seeing a resurgence in demand as remote work policies become more flexible, leading to a hybrid work model. This shift is creating new opportunities in both city centers and suburban areas.\n\nInvestment in real estate remains strong, with particular interest in properties that offer both residential and commercial potential. The market is also seeing an increase in international buyers, particularly in prime locations.\n\nKey factors influencing the market include:\n- Interest rates and their impact on mortgage affordability\n- The growing importance of sustainable and eco-friendly features\n- The integration of technology in home management\n- Changing work patterns and their effect on location preferences",
+    tags: ["market trends", "real estate", "investment", "sustainability", "smart homes"],
+    pictures: [
+      "https://realitypuchyr-estate-photos.s3.eu-central-1.amazonaws.com/blogs/market-trends-2024-1.jpg",
+      "https://realitypuchyr-estate-photos.s3.eu-central-1.amazonaws.com/blogs/market-trends-2024-2.jpg"
+    ],
+    metaTitle: "Real Estate Market Trends 2024: What Buyers and Sellers Need to Know",
+    metaDescription: "Discover the latest trends in the real estate market for 2024, including sustainable living, smart home technology, and changing buyer preferences. Essential reading for property investors and homebuyers.",
+    keywords: "real estate trends 2024, property market, sustainable homes, smart home technology, real estate investment, property buying guide",
+    language: "cs"
+  },
+  {
+    name: "How to Choose the Perfect Location for Your New Home",
+    slug: "choosing-perfect-location-new-home",
+    content: "Choosing the right location for your new home is one of the most important decisions you'll make in the home-buying process. This comprehensive guide will help you evaluate different factors that contribute to finding your ideal location.\n\nKey considerations include:\n- Proximity to work and essential services\n- School districts and educational facilities\n- Public transportation and accessibility\n- Neighborhood safety and community atmosphere\n- Future development plans in the area\n- Property value trends and investment potential\n\nRemember that the perfect location is subjective and depends on your personal needs and lifestyle preferences. Take the time to thoroughly research and visit potential neighborhoods before making your decision.",
+    tags: ["home buying", "location", "real estate tips", "property investment", "neighborhood"],
+    pictures: [
+      "https://realitypuchyr-estate-photos.s3.eu-central-1.amazonaws.com/blogs/location-guide-1.jpg",
+      "https://realitypuchyr-estate-photos.s3.eu-central-1.amazonaws.com/blogs/location-guide-2.jpg"
+    ],
+    metaTitle: "Guide to Choosing the Perfect Location for Your New Home | Real Estate Tips",
+    metaDescription: "Learn how to evaluate and choose the perfect location for your new home with our comprehensive guide. Essential tips for homebuyers and property investors.",
+    keywords: "home location guide, real estate tips, property location, neighborhood selection, home buying guide, property investment",
+    language: "cs"
+  }
+];
+
 async function main() {
   console.log('Start seeding...');
   
@@ -192,6 +223,13 @@ async function main() {
   for (const review of reviews) {
     await prisma.review.create({
       data: review
+    });
+  }
+  
+  // Create blogs
+  for (const blog of blogs) {
+    await prisma.blog.create({
+      data: blog
     });
   }
   

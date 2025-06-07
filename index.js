@@ -16,6 +16,8 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const categoriesRouter = require('./routes/categories');
 const reviewRoutes = require('./routes/reviewRoutes');
 const externalPropertyRoutes = require('./routes/externalPropertyRoutes');
+const blogRoutes = require('./routes/blogRoutes');
+const contactFormRoutes = require('./routes/contactFormRoutes');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -93,6 +95,8 @@ async function startServer() {
         app.use('/api/categories', categoriesRouter);
         app.use('/api/reviews', reviewRoutes);
         app.use('/api/external', externalPropertyRoutes);
+        app.use('/api/blogs', blogRoutes);
+        app.use('/api/contactform', contactFormRoutes);
 
         // Health check endpoint
         app.get('/health', (req, res) => {

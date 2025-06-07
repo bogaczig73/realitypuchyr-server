@@ -42,6 +42,8 @@ router.get('/', async (req, res) => {
 
 // Get category by ID
 router.get('/:id', async (req, res) => {
+    const preferredLanguage = req.language || 'cs';
+    console.log('Using language:', preferredLanguage);
     try {
         const category = await prisma.category.findUnique({
             where: {
