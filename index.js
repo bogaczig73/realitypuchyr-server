@@ -4,11 +4,17 @@ const path = require('path');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const { Pool } = require('pg');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
 const { uploadImages, uploadFiles, deleteFile, getSignedUrl, uploadFileToS3 } = require('./services/s3Service');
 const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const { initializeDatabase } = require('./services/dbInit');
 const { SUPPORTED_LANGUAGES } = require('./services/translationService');
+const validateApiKey = require('./middleware/apiKeyAuth');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+// Load Swagger document
+const swaggerDocument = YAML.load('./swagger.yaml');
 
 // Import routes
 const propertyRoutes = require('./routes/propertyRoutes');
@@ -48,15 +54,45 @@ async function startServer() {
         });
 
         // Middleware
-        app.use(helmet()); // Security headers
+        app.use(helmet({
+            contentSecurityPolicy: false, // Disable CSP for Swagger UI
+        })); // Security headers
         app.use(cors({
             origin: '*', // More permissive for development
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-            allowedHeaders: ['Content-Type', 'Authorization'],
+            allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
             credentials: true
         }));
         app.use(express.json());
         app.use(morgan('dev')); // Logging
+
+        // Apply API key validation to all routes except health check and Swagger UI
+        app.use((req, res, next) => {
+            // Skip API key validation for health check and Swagger UI
+            if (req.path === '/health' || req.path.startsWith('/api-docs')) {
+                return next();
+            }
+            validateApiKey(req, res, next);
+        });
+
+        // Swagger UI
+        app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+            explorer: true,
+            customCss: '.swagger-ui .topbar { display: none }',
+            customSiteTitle: "Reality Puchýř API Documentation",
+            customfavIcon: "/favicon.ico",
+            docExpansion: 'none',
+            filter: true,
+            showExtensions: true,
+            showCommonExtensions: true,
+            tagsSorter: 'alpha',
+            operationsSorter: 'alpha',
+            defaultModelsExpandDepth: 3,
+            defaultModelExpandDepth: 3,
+            displayRequestDuration: true,
+            tryItOutEnabled: true,
+            persistAuthorization: true
+        }));
 
         // Language middleware
         app.use((req, res, next) => {

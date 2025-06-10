@@ -1,0 +1,929 @@
+openapi: 3.0.0
+info:
+  title: Reality Puchýř API
+  description: API documentation for Reality Puchýř real estate platform
+  version: 1.0.0
+  contact:
+    name: Reality Puchýř Support
+    email: support@realitypuchyr.cz
+
+servers:
+  - url: /api
+    description: API base URL
+
+tags:
+  - name: Properties
+    description: Endpoints for managing real estate properties
+  - name: Categories
+    description: Endpoints for managing property categories
+  - name: Reviews
+    description: Endpoints for managing property reviews
+  - name: Upload
+    description: Endpoints for file and image uploads
+  - name: Blog
+    description: Endpoints for managing blog posts
+  - name: Contact
+    description: Endpoints for contact form submissions
+  - name: System
+    description: System-related endpoints like health checks
+
+components:
+  schemas:
+    Property:
+      type: object
+      required:
+        - name
+        - categoryId
+        - ownershipType
+        - size
+        - price
+      properties:
+        id:
+          type: integer
+          description: Property ID
+        name:
+          type: string
+          description: Property name
+        categoryId:
+          type: integer
+          description: ID of the property category
+        status:
+          type: string
+          enum: [ACTIVE, SOLD, RENT]
+          default: ACTIVE
+          description: Current status of the property
+        ownershipType:
+          type: string
+          enum: [RENT, OWNERSHIP]
+          description: Type of ownership
+        description:
+          type: string
+          description: Property description
+        city:
+          type: string
+          description: City where the property is located
+        street:
+          type: string
+          description: Street address
+        country:
+          type: string
+          description: Country
+        language:
+          type: string
+          enum: [cs, en, de]
+          default: cs
+          description: Content language
+        latitude:
+          type: number
+          format: float
+          description: Latitude coordinate
+        longitude:
+          type: number
+          format: float
+          description: Longitude coordinate
+        virtualTour:
+          type: string
+          description: URL to virtual tour
+        videoUrl:
+          type: string
+          description: URL to property video
+        size:
+          type: number
+          format: float
+          description: Property size
+        beds:
+          type: integer
+          description: Number of bedrooms
+        baths:
+          type: integer
+          description: Number of bathrooms
+        layout:
+          type: string
+          description: Property layout
+        files:
+          type: array
+          items:
+            type: object
+          default: []
+          description: Property files
+        price:
+          type: number
+          format: float
+          description: Property price
+        discountedPrice:
+          type: number
+          format: float
+          description: Discounted price if applicable
+        buildingStoriesNumber:
+          type: integer
+          description: Number of building stories
+        buildingCondition:
+          type: string
+          description: Building condition
+        apartmentCondition:
+          type: string
+          description: Apartment condition
+        aboveGroundFloors:
+          type: integer
+          description: Number of above ground floors
+        reconstructionYearApartment:
+          type: integer
+          description: Year of apartment reconstruction
+        reconstructionYearBuilding:
+          type: integer
+          description: Year of building reconstruction
+        totalAboveGroundFloors:
+          type: integer
+          description: Total number of above ground floors
+        totalUndergroundFloors:
+          type: integer
+          description: Total number of underground floors
+        floorArea:
+          type: number
+          format: float
+          description: Floor area
+        builtUpArea:
+          type: number
+          format: float
+          description: Built-up area
+        gardenHouseArea:
+          type: number
+          format: float
+          description: Garden house area
+        terraceArea:
+          type: number
+          format: float
+          description: Terrace area
+        totalLandArea:
+          type: number
+          format: float
+          description: Total land area
+        gardenArea:
+          type: number
+          format: float
+          description: Garden area
+        garageArea:
+          type: number
+          format: float
+          description: Garage area
+        balconyArea:
+          type: number
+          format: float
+          description: Balcony area
+        pergolaArea:
+          type: number
+          format: float
+          description: Pergola area
+        basementArea:
+          type: number
+          format: float
+          description: Basement area
+        workshopArea:
+          type: number
+          format: float
+          description: Workshop area
+        totalObjectArea:
+          type: number
+          format: float
+          description: Total object area
+        usableArea:
+          type: number
+          format: float
+          description: Usable area
+        landArea:
+          type: number
+          format: float
+          description: Land area
+        objectType:
+          type: string
+          description: Type of object
+        objectLocationType:
+          type: string
+          description: Type of object location
+        houseEquipment:
+          type: string
+          description: House equipment
+        accessRoad:
+          type: string
+          description: Access road
+        objectCondition:
+          type: string
+          description: Object condition
+        reservationPrice:
+          type: string
+          description: Reservation price
+        equipmentDescription:
+          type: string
+          description: Equipment description
+        additionalSources:
+          type: string
+          description: Additional sources
+        buildingPermit:
+          type: string
+          description: Building permit
+        buildability:
+          type: string
+          description: Buildability
+        utilitiesOnLand:
+          type: string
+          description: Utilities on land
+        utilitiesOnAdjacentRoad:
+          type: string
+          description: Utilities on adjacent road
+        payments:
+          type: string
+          description: Payment information
+        brokerId:
+          type: string
+          description: Broker ID
+        secondaryAgent:
+          type: string
+          description: Secondary agent
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/PropertyImage'
+        floorplans:
+          type: array
+          items:
+            $ref: '#/components/schemas/PropertyFloorplan'
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'
+        translations:
+          type: array
+          items:
+            $ref: '#/components/schemas/PropertyTranslation'
+
+    PropertyImage:
+      type: object
+      required:
+        - url
+        - propertyId
+      properties:
+        id:
+          type: integer
+          description: Image ID
+        url:
+          type: string
+          description: Image URL
+        isMain:
+          type: boolean
+          default: false
+          description: Whether this is the main image
+        order:
+          type: integer
+          default: 0
+          description: Image order
+        propertyId:
+          type: integer
+          description: ID of the associated property
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+
+    PropertyFloorplan:
+      type: object
+      required:
+        - url
+        - name
+        - propertyId
+      properties:
+        id:
+          type: integer
+          description: Floorplan ID
+        url:
+          type: string
+          description: Floorplan URL
+        name:
+          type: string
+          description: Floorplan name
+        propertyId:
+          type: integer
+          description: ID of the associated property
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+
+    Category:
+      type: object
+      required:
+        - name
+        - slug
+        - image
+      properties:
+        id:
+          type: integer
+          description: Category ID
+        name:
+          type: string
+          description: Category name
+        slug:
+          type: string
+          description: URL-friendly slug
+        image:
+          type: string
+          description: Category image URL
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    Review:
+      type: object
+      required:
+        - name
+        - description
+        - rating
+      properties:
+        id:
+          type: integer
+          description: Review ID
+        name:
+          type: string
+          description: Name of the reviewer
+        description:
+          type: string
+          description: Review text
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Rating from 1 to 5
+        propertyId:
+          type: integer
+          description: ID of the related property (optional)
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    PropertyTranslation:
+      type: object
+      required:
+        - propertyId
+        - language
+        - name
+      properties:
+        id:
+          type: integer
+          description: Translation ID
+        propertyId:
+          type: integer
+          description: ID of the property
+        language:
+          type: string
+          enum: [cs, en, de]
+          description: Language code
+        name:
+          type: string
+          description: Translated property name
+        description:
+          type: string
+          description: Translated property description
+        country:
+          type: string
+          description: Translated country name
+        size:
+          type: number
+          format: float
+          description: Translated size
+        beds:
+          type: string
+          description: Translated beds information
+        baths:
+          type: string
+          description: Translated baths information
+        buildingCondition:
+          type: string
+          description: Translated building condition
+        apartmentCondition:
+          type: string
+          description: Translated apartment condition
+        objectType:
+          type: string
+          description: Translated object type
+        objectLocationType:
+          type: string
+          description: Translated object location type
+        houseEquipment:
+          type: string
+          description: Translated house equipment
+        accessRoad:
+          type: string
+          description: Translated access road
+        objectCondition:
+          type: string
+          description: Translated object condition
+        equipmentDescription:
+          type: string
+          description: Translated equipment description
+        additionalSources:
+          type: string
+          description: Translated additional sources
+        buildingPermit:
+          type: string
+          description: Translated building permit
+        buildability:
+          type: string
+          description: Translated buildability
+        utilitiesOnLand:
+          type: string
+          description: Translated utilities on land
+        utilitiesOnAdjacentRoad:
+          type: string
+          description: Translated utilities on adjacent road
+        payments:
+          type: string
+          description: Translated payment information
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    Blog:
+      type: object
+      required:
+        - name
+        - slug
+        - content
+        - language
+      properties:
+        id:
+          type: integer
+          description: Blog post ID
+        name:
+          type: string
+          description: Blog post title
+        slug:
+          type: string
+          description: URL-friendly slug
+        content:
+          type: string
+          description: Blog post content
+        tags:
+          type: array
+          items:
+            type: string
+          description: Blog post tags
+        date:
+          type: string
+          format: date-time
+          description: Publication date
+        pictures:
+          type: array
+          items:
+            type: string
+          description: Array of image URLs
+        metaTitle:
+          type: string
+          description: SEO meta title
+        metaDescription:
+          type: string
+          description: SEO meta description
+        keywords:
+          type: string
+          description: SEO keywords
+        language:
+          type: string
+          enum: [cs, en, de]
+          default: cs
+          description: Content language
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    ContactForm:
+      type: object
+      required:
+        - name
+        - email
+        - subject
+        - message
+      properties:
+        id:
+          type: integer
+          description: Contact form submission ID
+        name:
+          type: string
+          description: Contact person's name
+        email:
+          type: string
+          format: email
+          description: Contact email
+        subject:
+          type: string
+          description: Message subject
+        message:
+          type: string
+          description: Message content
+        phoneNumber:
+          type: string
+          description: Contact phone number (optional)
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                description: Error message
+              details:
+                type: string
+                description: Additional error details
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /properties/stats:
+    get:
+      tags:
+        - Properties
+      summary: Get property statistics
+      description: Returns statistics about properties including active properties, sold properties, and years of experience
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  activeProperties:
+                    type: integer
+                  soldProperties:
+                    type: integer
+                  yearsOfExperience:
+                    type: integer
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /properties/category-stats:
+    get:
+      tags:
+        - Categories
+      summary: Get property category statistics
+      description: Returns the count of active properties for each category
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    categoryId:
+                      type: integer
+                    categoryName:
+                      type: string
+                    count:
+                      type: integer
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /properties:
+    post:
+      tags:
+        - Properties
+      summary: Create a new property
+      description: Creates a new property with the provided details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Property'
+      responses:
+        '201':
+          description: Property created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Property'
+        '400':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /properties/{id}/state:
+    patch:
+      tags:
+        - Properties
+      summary: Update property state
+      description: Updates the status of a property
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [ACTIVE, SOLD, RENT]
+      responses:
+        '200':
+          description: Property state updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Property'
+        '400':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /reviews:
+    get:
+      tags:
+        - Reviews
+      summary: Get all reviews
+      description: Returns all reviews, sorted by creation date (newest first)
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+        '500':
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+        - Reviews
+      summary: Create a new review
+      description: Creates a new review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Review'
+      responses:
+        '201':
+          description: Review created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '400':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /upload/image:
+    post:
+      tags:
+        - Upload
+      summary: Upload single image
+      description: Uploads a single image file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Image uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imageUrl:
+                    type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /upload/images:
+    post:
+      tags:
+        - Upload
+      summary: Upload multiple images
+      description: Uploads multiple image files (up to 10)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: Images uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imageUrls:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /blogs:
+    get:
+      tags:
+        - Blog
+      summary: Get all blogs
+      description: Returns paginated blog posts
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Items per page
+        - name: truncate
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of characters to truncate content
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Blog'
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /blogs/{slug}:
+    get:
+      tags:
+        - Blog
+      summary: Get blog by slug
+      description: Returns a single blog post by its slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Blog'
+        '404':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /contactform:
+    post:
+      tags:
+        - Contact
+      summary: Submit contact form
+      description: Submits a contact form
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactForm'
+      responses:
+        '201':
+          description: Contact form submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ContactForm'
+        '400':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+    get:
+      tags:
+        - Contact
+      summary: Get all contact form submissions
+      description: Returns all contact form submissions (admin only)
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ContactForm'
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check
+      description: Returns the health status of the API
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy] 
