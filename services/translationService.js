@@ -1,7 +1,7 @@
 const axios = require('axios');
 require('dotenv').config();
 
-const SUPPORTED_LANGUAGES = ['en', 'cs'];
+const SUPPORTED_LANGUAGES = ['en', 'cs', 'de', 'ru', 'ua', 'vn', 'es', 'fr', 'it'];
 const DEEPL_API_URL = 'https://api-free.deepl.com/v2/translate';
 
 /**
