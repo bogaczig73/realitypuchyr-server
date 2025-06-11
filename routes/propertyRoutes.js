@@ -4,6 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const { uploadPropertyFiles, uploadFileToS3, deleteFile } = require('../services/s3Service');
 const { validateProperty } = require('../middleware/validation');
 const { translateProperty, SUPPORTED_LANGUAGES } = require('../services/translationService');
+const { S3Client, ListObjectsV2Command, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 
 const prisma = new PrismaClient();
 
@@ -229,6 +230,9 @@ router.get('/video-tours', async (req, res, next) => {
                     take: 1,
                     select: {
                         url: true
+                    },
+                    orderBy: {
+                        order: 'asc'
                     }
                 }
             },
@@ -571,26 +575,73 @@ router.delete('/:id', async (req, res, next) => {
             return res.status(404).json({ error: 'Property not found' });
         }
 
-        // Delete all images from S3
-        const imageDeletePromises = property.images.map(image => deleteFile(image.url));
-        await Promise.all(imageDeletePromises);
-
-        // Delete all floorplans from S3
-        const floorplanDeletePromises = property.floorplans.map(floorplan => deleteFile(floorplan.url));
-        await Promise.all(floorplanDeletePromises);
-
-        // Delete any files stored in the files JSON field
-        if (property.files) {
-            try {
-                const files = JSON.parse(property.files);
-                if (Array.isArray(files)) {
-                    const fileDeletePromises = files.map(file => deleteFile(file.url));
-                    await Promise.all(fileDeletePromises);
-                }
-            } catch (error) {
-                console.error('Error parsing property files:', error);
+        // Initialize S3 client
+        const s3Client = new S3Client({
+            region: process.env.AWS_REGION || 'eu-central-1',
+            credentials: {
+                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
             }
+        });
+
+        // List all objects in the property's folders
+        const listCommands = [
+            new ListObjectsV2Command({
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Prefix: `images/${propertyId}/`
+            }),
+            new ListObjectsV2Command({
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Prefix: `floorplans/${propertyId}/`
+            }),
+            new ListObjectsV2Command({
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Prefix: `files/${propertyId}/`
+            })
+        ];
+
+        const [imagesResult, floorplansResult, filesResult] = await Promise.all(
+            listCommands.map(cmd => s3Client.send(cmd))
+        );
+
+        // Delete all objects from S3
+        const deletePromises = [];
+
+        // Delete images
+        if (imagesResult.Contents) {
+            const imageDeletePromises = imagesResult.Contents.map(object => 
+                s3Client.send(new DeleteObjectCommand({
+                    Bucket: process.env.AWS_BUCKET_NAME,
+                    Key: object.Key
+                }))
+            );
+            deletePromises.push(...imageDeletePromises);
         }
+
+        // Delete floorplans
+        if (floorplansResult.Contents) {
+            const floorplanDeletePromises = floorplansResult.Contents.map(object => 
+                s3Client.send(new DeleteObjectCommand({
+                    Bucket: process.env.AWS_BUCKET_NAME,
+                    Key: object.Key
+                }))
+            );
+            deletePromises.push(...floorplanDeletePromises);
+        }
+
+        // Delete files
+        if (filesResult.Contents) {
+            const fileDeletePromises = filesResult.Contents.map(object => 
+                s3Client.send(new DeleteObjectCommand({
+                    Bucket: process.env.AWS_BUCKET_NAME,
+                    Key: object.Key
+                }))
+            );
+            deletePromises.push(...fileDeletePromises);
+        }
+
+        // Wait for all S3 deletions to complete
+        await Promise.all(deletePromises);
 
         // Delete the property from the database (this will cascade delete related records)
         await prisma.property.delete({

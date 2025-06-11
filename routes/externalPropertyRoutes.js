@@ -329,7 +329,11 @@ router.put('/properties/:id', async (req, res) => {
     const updatedProperty = await prisma.property.findUnique({
       where: { id: parseInt(id) },
       include: {
-        images: true,
+        images: {
+          orderBy: {
+            order: 'asc'
+          }
+        },
         floorplans: true
       }
     });
