@@ -21,7 +21,6 @@ const propertyRoutes = require('./routes/propertyRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const categoriesRouter = require('./routes/categories');
 const reviewRoutes = require('./routes/reviewRoutes');
-const externalPropertyRoutes = require('./routes/externalPropertyRoutes');
 const blogRoutes = require('./routes/blogRoutes');
 const contactFormRoutes = require('./routes/contactFormRoutes');
 
@@ -130,7 +129,6 @@ async function startServer() {
         app.use('/api/upload', uploadRoutes);
         app.use('/api/categories', categoriesRouter);
         app.use('/api/reviews', reviewRoutes);
-        app.use('/api/external', externalPropertyRoutes);
         app.use('/api/blogs', blogRoutes);
         app.use('/api/contactform', contactFormRoutes);
 

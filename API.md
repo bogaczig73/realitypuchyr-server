@@ -33,11 +33,46 @@ GET /properties/category-stats
 ```
 Returns the count of active properties for each category.
 
-#### Create Property
+#### Get All Properties
+```
+GET /properties
+```
+Returns paginated properties with search and filtering capabilities.
+
+**Query Parameters:**
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 12)
+- `search`: Search term for name and description
+- `status`: Filter by status (ACTIVE, SOLD, RENT)
+- `categoryId`: Filter by category ID
+
+#### Get Properties with Video Tours
+```
+GET /properties/video-tours
+```
+Returns up to 6 properties that have video tours for carousel display.
+
+#### Get Property by ID
+```
+GET /properties/:id
+```
+Returns a single property with all details, supporting language translations.
+
+#### Create Property (Internal/Admin)
 ```
 POST /properties
 ```
-Creates a new property.
+Creates a new property with file uploads and comprehensive validation.
+
+**Request Body:**
+- Form data with property fields and file uploads
+- Supports image and file uploads via multer middleware
+
+#### Create Property (External Integration)
+```
+POST /properties/external
+```
+Creates a new property from external source (simplified version without file uploads).
 
 **Request Body:**
 ```json
@@ -50,12 +85,11 @@ Creates a new property.
   "city": "string",
   "street": "string",
   "country": "string",
-  "language": "string",       // Default: "cs"
   "latitude": "number",
   "longitude": "number",
   "virtualTour": "string",
   "videoUrl": "string",
-  "size": "number",
+  "size": "number",           // Required
   "beds": "number",
   "baths": "number",
   "price": "number",          // Required
@@ -63,6 +97,21 @@ Creates a new property.
   // ... additional property fields
 }
 ```
+
+#### Sync Property Files from S3 (External Integration)
+```
+PUT /properties/:id/sync
+```
+Updates property images and files by syncing from S3 storage. This endpoint is designed for external integrations that upload files directly to S3.
+
+**Response:**
+Returns the updated property with synced images and files.
+
+#### Update Property
+```
+PUT /properties/:id
+```
+Updates an existing property.
 
 #### Update Property State
 ```
@@ -74,6 +123,26 @@ Updates the status of a property.
 ```json
 {
   "status": "string"  // ACTIVE, SOLD, or RENT
+}
+```
+
+#### Delete Property
+```
+DELETE /properties/:id
+```
+Deletes a property and all associated files from S3.
+
+#### Translate Property
+```
+POST /properties/:id/translate
+```
+Translates a property to the specified target language using DeepL API.
+
+**Request Body:**
+```json
+{
+  "targetLanguage": "string",  // Required: en, cs, de, ru, ua, vn, es, fr, it
+  "sourceLanguage": "string"   // Optional: defaults to Czech (cs)
 }
 ```
 
@@ -158,6 +227,23 @@ GET /blogs/:slug
 ```
 Returns a single blog post by its slug.
 
+#### Translate Blog
+```
+POST /blogs/:id/translate
+```
+Translates a blog post to the specified target language using DeepL API. This includes translating the title, content, tags, meta information, and creating a localized slug.
+
+**Request Body:**
+```json
+{
+  "targetLanguage": "string",  // Required: en, cs, de, ru, ua, vn, es, fr, it
+  "sourceLanguage": "string"   // Optional: defaults to Czech (cs)
+}
+```
+
+**Response:**
+Returns the created translation object with translated content and localized slug.
+
 ### Contact Form
 
 #### Submit Contact Form
@@ -183,31 +269,20 @@ GET /contactform
 ```
 Returns all contact form submissions (admin only).
 
-### External Properties
+## Migration Notes
 
-#### Create External Property
-```
-POST /external/properties
-```
-Creates a new property from an external source.
+### External Integration Changes
+If you were using the external property routes (`/api/external/properties`), you'll need to update your integration:
 
-**Request Body:**
-```json
-{
-  "name": "string",           // Required
-  "categoryId": "number",     // Required
-  "ownershipType": "string",  // Required
-  "size": "number",           // Required
-  "price": "number",          // Required
-  // ... additional property fields
-}
-```
+**Old endpoints:**
+- `POST /api/external/properties` → `POST /api/properties/external`
+- `PUT /api/external/properties/:id` → `PUT /api/properties/:id/sync`
 
-#### Update External Property
-```
-PUT /external/properties/:id
-```
-Updates property images and files from S3.
+**Benefits of consolidation:**
+- Single source of truth for property operations
+- Consistent error handling and validation
+- Shared helper functions and utilities
+- Easier maintenance and updates
 
 ## Error Responses
 
@@ -244,4 +319,4 @@ Returns the health status of the API.
 {
   "status": "healthy"
 }
-``` 
+```

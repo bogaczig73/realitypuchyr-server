@@ -521,6 +521,57 @@ components:
           format: date-time
           description: Last update timestamp
 
+    BlogTranslation:
+      type: object
+      required:
+        - blogId
+        - language
+        - name
+        - slug
+        - content
+      properties:
+        id:
+          type: integer
+          description: Translation ID
+        blogId:
+          type: integer
+          description: ID of the blog
+        language:
+          type: string
+          enum: [cs, en, de, ru, ua, vn, es, fr, it]
+          description: Language code
+        name:
+          type: string
+          description: Translated blog title
+        slug:
+          type: string
+          description: Translated blog slug
+        content:
+          type: string
+          description: Translated blog content
+        tags:
+          type: array
+          items:
+            type: string
+          description: Translated blog tags
+        metaTitle:
+          type: string
+          description: Translated SEO meta title
+        metaDescription:
+          type: string
+          description: Translated SEO meta description
+        keywords:
+          type: string
+          description: Translated SEO keywords
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
     ContactForm:
       type: object
       required:
@@ -855,6 +906,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Blog'
+        '404':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /blogs/{id}/translate:
+    post:
+      tags:
+        - Blog
+      summary: Translate blog to target language
+      description: Translates a blog post to the specified target language using DeepL API
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Blog ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - targetLanguage
+              properties:
+                targetLanguage:
+                  type: string
+                  enum: [en, cs, de, ru, ua, vn, es, fr, it]
+                  description: Target language code
+                sourceLanguage:
+                  type: string
+                  enum: [en, cs, de, ru, ua, vn, es, fr, it]
+                  description: Source language code (optional, defaults to Czech)
+      responses:
+        '200':
+          description: Blog translated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlogTranslation'
+        '400':
+          $ref: '#/components/responses/Error'
         '404':
           $ref: '#/components/responses/Error'
         '500':

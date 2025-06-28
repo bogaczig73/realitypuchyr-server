@@ -182,8 +182,28 @@ model Blog {
   language        String   @default("cs")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
+  translations    BlogTranslation[]
 
   @@map("blogs")
+}
+
+model BlogTranslation {
+  id              Int      @id @default(autoincrement())
+  blogId          Int      @map("blog_id")
+  language        String   // e.g., "en", "cs", "de"
+  name            String
+  slug            String   @unique
+  content         String   @db.Text
+  tags            String[]
+  metaTitle       String?  @map("meta_title")
+  metaDescription String?  @map("meta_description") @db.Text
+  keywords        String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  blog            Blog     @relation(fields: [blogId], references: [id], onDelete: Cascade)
+
+  @@unique([blogId, language])
+  @@map("blog_translations")
 }
 
 model ContactForm {
