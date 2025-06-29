@@ -11,6 +11,7 @@ const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const { initializeDatabase } = require('./services/dbInit');
 const { SUPPORTED_LANGUAGES } = require('./services/translationService');
 const validateApiKey = require('./middleware/apiKeyAuth');
+const { prismaErrorHandler } = require('./middleware/prismaErrorHandler');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // Load Swagger document
@@ -279,6 +280,8 @@ async function startServer() {
         });
 
         // Error handling middleware
+        app.use(prismaErrorHandler);
+        
         app.use((err, req, res, next) => {
             console.error('Unhandled error:', err);
             res.status(err.status || 500).json({

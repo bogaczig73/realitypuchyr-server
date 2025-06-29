@@ -362,6 +362,52 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// Get blog translation languages
+router.get('/:id/languages', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Get the blog with all its translations
+        const blog = await prisma.blog.findUnique({
+            where: { id: parseInt(id) },
+            include: {
+                translations: {
+                    select: {
+                        language: true
+                    }
+                }
+            }
+        });
+
+        if (!blog) {
+            return res.status(404).json({ error: 'Blog not found' });
+        }
+
+        // Extract languages from translations and include the original language
+        const languages = [
+            blog.language, // Original language
+            ...blog.translations.map(t => t.language) // Translated languages
+        ];
+
+        // Remove duplicates and sort
+        const uniqueLanguages = [...new Set(languages)].sort();
+
+        res.json({
+            blogId: parseInt(id),
+            blogName: blog.name,
+            languages: uniqueLanguages,
+            originalLanguage: blog.language,
+            translatedLanguages: blog.translations.map(t => t.language).sort()
+        });
+    } catch (error) {
+        console.error('Error fetching blog languages:', error);
+        res.status(500).json({ 
+            error: 'Failed to fetch blog languages',
+            details: error.message
+        });
+    }
+});
+
 // Translate blog to target language
 router.post('/:id/translate', async (req, res) => {
   try {

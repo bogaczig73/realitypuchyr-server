@@ -744,6 +744,84 @@ paths:
         '500':
           $ref: '#/components/responses/Error'
 
+  /properties/{id}/translate:
+    post:
+      tags:
+        - Properties
+      summary: Translate property to target language
+      description: Translates a property to the specified target language using DeepL API
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Property ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - targetLanguage
+              properties:
+                targetLanguage:
+                  type: string
+                  enum: [en, cs, de, ru, ua, vn, es, fr, it]
+                  description: Target language code
+                sourceLanguage:
+                  type: string
+                  enum: [en, cs, de, ru, ua, vn, es, fr, it]
+                  description: Source language code (optional, defaults to Czech)
+      responses:
+        '200':
+          description: Property translated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PropertyTranslation'
+        '400':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+
+  /properties/{id}/languages:
+    get:
+      tags:
+        - Properties
+      summary: Get property languages
+      description: Returns the original language and all available languages for a property
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Property ID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  originalLanguage:
+                    type: string
+                    description: Original language of the property
+                  availableLanguages:
+                    type: array
+                    description: All available languages (original + translations)
+                    items:
+                      type: string
+        '404':
+          $ref: '#/components/responses/Error'
+        '500':
+          $ref: '#/components/responses/Error'
+
   /reviews:
     get:
       tags:

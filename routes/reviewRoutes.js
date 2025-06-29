@@ -88,4 +88,118 @@ router.post('/', async (req, res) => {
   }
 });
 
+/**
+ * PUT /api/reviews/:id - update an existing review
+ * 
+ * Request body structure:
+ * {
+ *   "name": string,      // Optional: Name of the reviewer
+ *   "description": string, // Optional: Review text/description
+ *   "rating": number,    // Optional: Rating from 1 to 5
+ *   "propertyId": number | null // Optional: ID of the related property
+ * }
+ * 
+ * Response codes:
+ * - 200: Review updated successfully
+ * - 400: Invalid input (invalid rating)
+ * - 404: Review not found
+ * - 500: Server error
+ */
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, rating, propertyId } = req.body;
+
+    // Check if review exists
+    const existingReview = await prisma.review.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!existingReview) {
+      return res.status(404).json({ error: 'Review not found' });
+    }
+
+    // Validate rating if provided
+    if (rating !== undefined && (rating < 1 || rating > 5)) {
+      return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+    }
+
+    // Prepare update data (only include fields that are provided)
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (rating !== undefined) updateData.rating = Number(rating);
+    if (propertyId !== undefined) updateData.propertyId = propertyId ? Number(propertyId) : null;
+
+    const updatedReview = await prisma.review.update({
+      where: { id: parseInt(id) },
+      data: updateData
+    });
+
+    res.json(updatedReview);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to update review' });
+  }
+});
+
+/**
+ * DELETE /api/reviews/:id - delete a review
+ * 
+ * Response codes:
+ * - 204: Review deleted successfully
+ * - 404: Review not found
+ * - 500: Server error
+ */
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if review exists
+    const existingReview = await prisma.review.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!existingReview) {
+      return res.status(404).json({ error: 'Review not found' });
+    }
+
+    await prisma.review.delete({
+      where: { id: parseInt(id) }
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to delete review' });
+  }
+});
+
+/**
+ * GET /api/reviews/:id - get a single review by ID
+ * 
+ * Response codes:
+ * - 200: Review found
+ * - 404: Review not found
+ * - 500: Server error
+ */
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const review = await prisma.review.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!review) {
+      return res.status(404).json({ error: 'Review not found' });
+    }
+
+    res.json(review);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch review' });
+  }
+});
+
 module.exports = router; 

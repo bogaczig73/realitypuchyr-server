@@ -5,6 +5,7 @@ const { uploadPropertyFiles, uploadFileToS3, deleteFile } = require('../services
 const { validateProperty } = require('../middleware/validation');
 const { translateProperty, SUPPORTED_LANGUAGES } = require('../services/translationService');
 const { S3Client, ListObjectsV2Command, DeleteObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { handlePrismaError } = require('../middleware/prismaErrorHandler');
 
 const prisma = new PrismaClient();
 
@@ -456,7 +457,7 @@ router.post('/', uploadPropertyFiles, validateProperty, async (req, res, next) =
                 utilitiesOnLand: utilitiesOnLand || null,
                 utilitiesOnAdjacentRoad: utilitiesOnAdjacentRoad || null,
                 payments: payments || null,
-                brokerId: brokerId ? parseInt(brokerId) : null,
+                brokerId: brokerId ? String(brokerId) : null,
                 secondaryAgent: secondaryAgent || null,
                 language,
             }
@@ -525,6 +526,13 @@ router.post('/', uploadPropertyFiles, validateProperty, async (req, res, next) =
         res.status(201).json(propertyWithCloudFrontUrls);
     } catch (err) {
         console.error('Error creating property:', err);
+        
+        // Handle Prisma errors with centralized error handler
+        if (err.code?.startsWith('P') || err.message?.includes('prisma.')) {
+            const errorResponse = handlePrismaError(err);
+            return res.status(errorResponse.status).json(errorResponse);
+        }
+        
         next(err);
     }
 });
@@ -672,7 +680,7 @@ router.post('/external', async (req, res) => {
         utilitiesOnLand,
         utilitiesOnAdjacentRoad,
         payments,
-        brokerId,
+        brokerId: brokerId ? String(brokerId) : null,
         secondaryAgent
       }
     });
@@ -712,6 +720,13 @@ router.post('/external', async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating property:', error);
+    
+    // Handle Prisma errors with centralized error handler
+    if (error.code?.startsWith('P') || error.message?.includes('prisma.')) {
+      const errorResponse = handlePrismaError(error);
+      return res.status(errorResponse.status).json(errorResponse);
+    }
+    
     res.status(500).json({
       success: false,
       error: 'Error creating property',
@@ -1099,6 +1114,58 @@ router.post('/:id/translate', async (req, res) => {
   } catch (error) {
     console.error('Translation error:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @route GET /api/properties/:id/languages
+ * @desc Get all languages a property has been translated to
+ * @access Public
+ */
+router.get('/:id/languages', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const propertyId = parseInt(id);
+
+    // Check if property exists
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId },
+      include: {
+        translations: {
+          select: {
+            language: true
+          }
+        }
+      }
+    });
+
+    if (!property) {
+      return res.status(404).json({ 
+        error: 'Property not found',
+        message: 'The specified property does not exist'
+      });
+    }
+
+    // Get available languages (original + translations)
+    const availableLanguages = [
+      property.language,
+      ...property.translations.map(translation => translation.language)
+    ];
+
+    res.json({
+      originalLanguage: property.language,
+      availableLanguages
+    });
+  } catch (err) {
+    console.error('Error fetching property languages:', err);
+    
+    // Handle Prisma errors with centralized error handler
+    if (err.code?.startsWith('P') || err.message?.includes('prisma.')) {
+      const errorResponse = handlePrismaError(err);
+      return res.status(errorResponse.status).json(errorResponse);
+    }
+    
+    next(err);
   }
 });
 
