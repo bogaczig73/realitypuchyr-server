@@ -57,12 +57,55 @@ async function startServer() {
         app.use(helmet({
             contentSecurityPolicy: false, // Disable CSP for Swagger UI
         })); // Security headers
-        app.use(cors({
-            origin: '*', // More permissive for development
+        
+        // CORS configuration
+        const corsOptions = {
+            origin: function (origin, callback) {
+                // Allow requests with no origin (like mobile apps or curl requests)
+                if (!origin) {
+                    console.log('CORS: No origin provided, allowing request');
+                    return callback(null, true);
+                }
+                
+                console.log('CORS: Checking origin:', origin);
+                
+                // Allow your frontend domains
+                const allowedOrigins = [
+                    'https://realitypuchyr.com',
+                    'https://www.realitypuchyr.com',
+                    'http://localhost:3000',
+                    'http://localhost:3001',
+                    'http://localhost:5173',
+                    'http://localhost:4173',
+                    'https://realitypuchyr.vercel.app',
+                    'https://realitypuchyr.netlify.app',
+                    'https://realityupchyr-server-production.up.railway.app',
+                    'http://realityupchyr-server-production.up.railway.app'
+                ];
+                
+                if (allowedOrigins.indexOf(origin) !== -1) {
+                    console.log('CORS: Origin allowed:', origin);
+                    callback(null, true);
+                } else {
+                    console.log('CORS: Origin blocked:', origin);
+                    console.log('CORS: Allowed origins:', allowedOrigins);
+                    callback(new Error('Not allowed by CORS'));
+                }
+            },
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-            allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
-            credentials: true
-        }));
+            allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'Origin', 'X-Requested-With', 'Accept'],
+            exposedHeaders: ['Content-Length', 'X-API-Key'],
+            credentials: true,
+            optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
+            preflightContinue: false,
+            maxAge: 86400 // Cache preflight response for 24 hours
+        };
+        
+        app.use(cors(corsOptions));
+        
+        // Handle preflight requests
+        app.options('*', cors(corsOptions));
+        
         app.use(express.json());
         app.use(morgan('dev')); // Logging
 
@@ -137,6 +180,8 @@ async function startServer() {
         app.get('/health', (req, res) => {
             res.status(200).json({ status: 'healthy' });
         });
+
+
 
 
         // Create new property
