@@ -2,10 +2,10 @@ const axios = require('axios');
 require('dotenv').config();
 
 const SUPPORTED_LANGUAGES = [
-  'AR', 'BG', 'CS', 'DA', 'DE', 'EL', 'EN', 'EN-GB', 'EN-US', 'ES', 'ES-419',
-  'ET', 'FI', 'FR', 'HE', 'HU', 'ID', 'IT', 'JA', 'KO', 'LT', 'LV', 'NB',
-  'NL', 'PL', 'PT', 'PT-BR', 'PT-PT', 'RO', 'RU', 'SK', 'SL', 'SV', 'TH',
-  'TR', 'UK', 'VI', 'ZH', 'ZH-HANS', 'ZH-HANT'
+  'ar', 'bg', 'cs', 'da', 'de', 'el', 'en', 'en-gb', 'en-us', 'es', 'es-419',
+  'et', 'fi', 'fr', 'he', 'hu', 'id', 'it', 'ja', 'ko', 'lt', 'lv', 'nb',
+  'nl', 'pl', 'pt', 'pt-br', 'pt-pt', 'ro', 'ru', 'sk', 'sl', 'sv', 'th',
+  'tr', 'uk', 'vi', 'zh', 'zh-hans', 'zh-hant', 'cs'
 ];
 const DEEPL_API_URL = 'https://api-free.deepl.com/v2/translate';
 
