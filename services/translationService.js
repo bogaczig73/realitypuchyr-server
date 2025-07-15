@@ -1,7 +1,12 @@
 const axios = require('axios');
 require('dotenv').config();
 
-const SUPPORTED_LANGUAGES = ['en', 'cs', 'de', 'ru', 'ua', 'vn', 'es', 'fr', 'it'];
+const SUPPORTED_LANGUAGES = [
+  'AR', 'BG', 'CS', 'DA', 'DE', 'EL', 'EN', 'EN-GB', 'EN-US', 'ES', 'ES-419',
+  'ET', 'FI', 'FR', 'HE', 'HU', 'ID', 'IT', 'JA', 'KO', 'LT', 'LV', 'NB',
+  'NL', 'PL', 'PT', 'PT-BR', 'PT-PT', 'RO', 'RU', 'SK', 'SL', 'SV', 'TH',
+  'TR', 'UK', 'VI', 'ZH', 'ZH-HANS', 'ZH-HANT'
+];
 const DEEPL_API_URL = 'https://api-free.deepl.com/v2/translate';
 
 /**
@@ -107,7 +112,7 @@ const translateHtmlContent = async (htmlContent, targetLanguage, sourceLanguage)
  * @returns {Promise<Object>} Translated property fields
  */
 const translateProperty = async (property, targetLanguage, sourceLanguage) => {
-  if (!SUPPORTED_LANGUAGES.includes(targetLanguage)) {
+  if (!SUPPORTED_LANGUAGES.includes(targetLanguage.toUpperCase())) {
     throw new Error(`Unsupported language: ${targetLanguage}`);
   }
 
@@ -155,7 +160,7 @@ const translateProperty = async (property, targetLanguage, sourceLanguage) => {
  * @returns {Promise<Object>} Translated blog fields
  */
 const translateBlog = async (blog, targetLanguage, sourceLanguage) => {
-  if (!SUPPORTED_LANGUAGES.includes(targetLanguage)) {
+  if (!SUPPORTED_LANGUAGES.includes(targetLanguage.toUpperCase())) {
     throw new Error(`Unsupported language: ${targetLanguage}`);
   }
 
