@@ -190,7 +190,7 @@ router.get('/:slug', async (req, res) => {
         }
         
         // If no translation exists or if preferred language is the original language,
-        // return original blog
+        // return the blog in its default language (main table fields)
         const blogWithoutTranslations = {
             ...blog,
             translations: undefined // Remove translations array from response

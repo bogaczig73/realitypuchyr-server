@@ -269,6 +269,7 @@ router.get('/:id', async (req, res) => {
     const preferredLanguage = req.language || 'cs';
     console.log('Using language:', preferredLanguage);
 
+    // Always fetch the property and all translations for the requested language
     const property = await prisma.property.findUnique({
       where: { id: parseInt(id) },
       include: {
@@ -337,7 +338,7 @@ router.get('/:id', async (req, res) => {
     }
 
     // If no translation exists or if preferred language is the original language,
-    // return original property with CloudFront URLs
+    // return the property in its default language (main table fields)
     const propertyWithCloudFrontUrls = {
       ...property,
       images: property.images.map(image => ({
@@ -347,7 +348,8 @@ router.get('/:id', async (req, res) => {
       category: {
         ...property.category,
         image: convertToCloudFrontUrl(property.category.image)
-      }
+      },
+      translations: undefined // Remove translations array from response
     };
 
     res.json(propertyWithCloudFrontUrls);
