@@ -18,7 +18,7 @@ const createSlug = (text) => {
   return text
     .toLowerCase()
     .trim()
-    .replace(/[^\w\s-]/g, '') // Remove special characters except spaces and hyphens
+    .replace(/[^ -\p{L}\p{N}\s-]/gu, '') // Remove everything except Unicode letters, numbers, spaces, dashes
     .replace(/\s+/g, '-') // Replace spaces with hyphens
     .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
     .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
