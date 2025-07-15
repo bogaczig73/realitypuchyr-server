@@ -81,7 +81,8 @@ async function startServer() {
                     'https://realitypuchyr.vercel.app',
                     'https://realitypuchyr.netlify.app',
                     'https://realityupchyr-server-production.up.railway.app',
-                    'http://realityupchyr-server-production.up.railway.app'
+                    'http://realityupchyr-server-production.up.railway.app',
+                    'https://realitypuchyr-admin.vercel.app'
                 ];
                 
                 if (allowedOrigins.indexOf(origin) !== -1) {
