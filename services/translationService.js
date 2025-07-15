@@ -112,7 +112,7 @@ const translateHtmlContent = async (htmlContent, targetLanguage, sourceLanguage)
  * @returns {Promise<Object>} Translated property fields
  */
 const translateProperty = async (property, targetLanguage, sourceLanguage) => {
-  if (!SUPPORTED_LANGUAGES.includes(targetLanguage.toUpperCase())) {
+  if (!SUPPORTED_LANGUAGES.includes(targetLanguage)) {
     throw new Error(`Unsupported language: ${targetLanguage}`);
   }
 
@@ -160,7 +160,7 @@ const translateProperty = async (property, targetLanguage, sourceLanguage) => {
  * @returns {Promise<Object>} Translated blog fields
  */
 const translateBlog = async (blog, targetLanguage, sourceLanguage) => {
-  if (!SUPPORTED_LANGUAGES.includes(targetLanguage.toUpperCase())) {
+  if (!SUPPORTED_LANGUAGES.includes(targetLanguage)) {
     throw new Error(`Unsupported language: ${targetLanguage}`);
   }
 
