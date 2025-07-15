@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
-const { sendContactFormNotification } = require('../services/emailService');
+const { sendContactFormNotification, emailService } = require('../services/emailService');
 const prisma = new PrismaClient();
 
 // Create a new contact form submission
@@ -28,16 +28,16 @@ router.post('/', async (req, res) => {
       }
     });
 
-    // Email notifications are currently disabled
-    // TODO: Enable email notifications when ready
-    /*
+    // Send email notification
     try {
-      await sendContactFormNotification(contactForm);
+      const emailSent = await sendContactFormNotification(contactForm);
+      if (!emailSent) {
+        console.warn('Failed to send email notification for contact form submission:', contactForm.id);
+      }
     } catch (emailError) {
       console.error('Error sending email notification:', emailError);
       // Don't fail the request if email sending fails
     }
-    */
 
     res.status(201).json({
       success: true,
@@ -76,12 +76,42 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Test email service connection (admin only)
+router.get('/test-email', async (req, res) => {
+  try {
+    const isConnected = await emailService.verifyConnection();
+    res.json({
+      success: true,
+      emailServiceConnected: isConnected,
+      message: isConnected ? 'Email service is connected' : 'Email service connection failed'
+    });
+  } catch (error) {
+    console.error('Error testing email service:', error);
+    res.status(500).json({
+      success: false,
+      emailServiceConnected: false,
+      message: 'Error testing email service',
+      error: error.message
+    });
+  }
+});
+
 // Get a single contact form submission by ID (admin only)
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Validate that id is a valid integer
+    const parsedId = parseInt(id);
+    if (isNaN(parsedId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid ID format. ID must be a number.'
+      });
+    }
+    
     const submission = await prisma.contactForm.findUnique({
-      where: { id: parseInt(id) }
+      where: { id: parsedId }
     });
 
     if (!submission) {
@@ -109,8 +139,18 @@ router.get('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Validate that id is a valid integer
+    const parsedId = parseInt(id);
+    if (isNaN(parsedId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid ID format. ID must be a number.'
+      });
+    }
+    
     await prisma.contactForm.delete({
-      where: { id: parseInt(id) }
+      where: { id: parsedId }
     });
 
     res.json({

@@ -183,6 +183,7 @@ router.get('/', async (req, res, next) => {
                     utilitiesOnLand: translation.utilitiesOnLand,
                     utilitiesOnAdjacentRoad: translation.utilitiesOnAdjacentRoad,
                     payments: translation.payments,
+                    priceHidden: property.priceHidden, // ensure priceHidden is included
                     translations: undefined // Remove translations array from response
                 };
             }
@@ -315,6 +316,7 @@ router.get('/:id', async (req, res) => {
         utilitiesOnLand: translation.utilitiesOnLand,
         utilitiesOnAdjacentRoad: translation.utilitiesOnAdjacentRoad,
         payments: translation.payments,
+        priceHidden: property.priceHidden, // ensure priceHidden is included
         translations: undefined // Remove translations array from response
       };
 
@@ -377,7 +379,7 @@ router.post('/', uploadPropertyFiles, validateProperty, async (req, res, next) =
             reservationPrice, equipmentDescription, additionalSources,
             buildingPermit, buildability, utilitiesOnLand,
             utilitiesOnAdjacentRoad, payments, brokerId, secondaryAgent,
-            layout
+            layout, priceHidden
         } = req.body;
 
         // Validate required fields
@@ -403,6 +405,7 @@ router.post('/', uploadPropertyFiles, validateProperty, async (req, res, next) =
                 // Required fields
                 name,
                 price: parseFloat(price),
+                priceHidden: priceHidden !== undefined ? priceHidden : false,
                 categoryId: parseInt(categoryId),
                 status: status.toUpperCase(),
                 ownershipType: ownershipType.toUpperCase(),
@@ -899,7 +902,10 @@ router.put('/:id', validateProperty, async (req, res, next) => {
 
         const property = await prisma.property.update({
             where: { id: parseInt(id) },
-            data: updateData,
+            data: {
+                ...updateData,
+                priceHidden: updateData.priceHidden !== undefined ? updateData.priceHidden : false
+            },
             include: {
                 images: true,
                 floorplans: true
