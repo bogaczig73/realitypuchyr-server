@@ -118,6 +118,7 @@ enum PropertyStatus {
   ACTIVE
   SOLD
   RENT
+  SHOWCASE
 }
 
 enum OwnershipType {
