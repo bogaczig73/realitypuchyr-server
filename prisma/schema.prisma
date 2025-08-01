@@ -30,6 +30,7 @@ model Property {
   files                       Json?               @default("[]")
   price                       Decimal             @db.Decimal(10, 2)
   priceHidden                 Boolean             @default(false)
+  isHidden                    Boolean             @default(false)
   discountedPrice             Decimal?            @db.Decimal(10, 2)
   buildingStoriesNumber       Int?
   buildingCondition           String?
