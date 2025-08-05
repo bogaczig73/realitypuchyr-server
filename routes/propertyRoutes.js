@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const { uploadPropertyFiles, uploadFileToS3, deleteFile } = require('../services/s3Service');
-const { validateProperty } = require('../middleware/validation');
+const { validateProperty, validatePropertyUpdate } = require('../middleware/validation');
 const { translateProperty, SUPPORTED_LANGUAGES } = require('../services/translationService');
 const { S3Client, ListObjectsV2Command, DeleteObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { handlePrismaError } = require('../middleware/prismaErrorHandler');
@@ -921,7 +921,7 @@ router.put('/:id/sync', async (req, res) => {
 });
 
 // Update property
-router.put('/:id', validateProperty, async (req, res, next) => {
+router.put('/:id', validatePropertyUpdate, async (req, res, next) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
