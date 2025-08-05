@@ -468,6 +468,36 @@ router.post('/', uploadPropertyFiles, validateProperty, async (req, res, next) =
             }
         });
 
+        // Create S3 folders for the new property
+        const s3Client = new S3Client({
+            region: process.env.AWS_REGION || 'eu-central-1',
+            credentials: {
+                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+            }
+        });
+
+        // Create empty objects to represent folders
+        const folderPromises = [
+            s3Client.send(new PutObjectCommand({
+                Bucket: process.env.AWS_BUCKET_NAME || 'realitypuchyr-estate-photos',
+                Key: `images/${property.id}/`,
+                Body: ''
+            })),
+            s3Client.send(new PutObjectCommand({
+                Bucket: process.env.AWS_BUCKET_NAME || 'realitypuchyr-estate-photos',
+                Key: `floorplans/${property.id}/`,
+                Body: ''
+            })),
+            s3Client.send(new PutObjectCommand({
+                Bucket: process.env.AWS_BUCKET_NAME || 'realitypuchyr-estate-photos',
+                Key: `files/${property.id}/`,
+                Body: ''
+            }))
+        ];
+
+        await Promise.all(folderPromises);
+
         // Handle image uploads
         if (req.files && req.files.images) {
             const imageUploadPromises = req.files.images.map((file, index) => 
